@@ -27,32 +27,35 @@ class BMP:
             header_size = read_int()
 
             if header_size == 108:
-                raise ValueError('Invalid header size: ' + str(header_size) +
-                                 ' (BMP files with color space information are not supported)')
+                raise ValueError(
+                    f'Invalid header size: {str(header_size)} (BMP files with color space information are not supported)'
+                )
 
             if header_size != 40:
-                raise ValueError('Invalid header size: ' + str(header_size))
+                raise ValueError(f'Invalid header size: {str(header_size)}')
 
             self.width = read_int()
 
             if self.width == 0 or self.width % 8 != 0:
-                raise ValueError('Invalid width: ' + str(self.width))
+                raise ValueError(f'Invalid width: {str(self.width)}')
 
             self.height = read_int()
 
             if self.height == 0 or self.height % 8 != 0:
-                raise ValueError('Invalid height: ' + str(self.height))
+                raise ValueError(f'Invalid height: {str(self.height)}')
 
             file.read(2)
             bits_per_pixel = read_short()
 
-            if bits_per_pixel != 4 and bits_per_pixel != 8:
-                raise ValueError('Invalid bits per pixel: ' + str(bits_per_pixel))
+            if bits_per_pixel not in [4, 8]:
+                raise ValueError(f'Invalid bits per pixel: {str(bits_per_pixel)}')
 
             compression_method = read_int()
 
             if compression_method != 0:
-                raise ValueError('Compression method not supported: ' + str(compression_method))
+                raise ValueError(
+                    f'Compression method not supported: {str(compression_method)}'
+                )
 
             file.read(20)
             self.__colors_offset = file.tell()
@@ -63,24 +66,32 @@ class BMP:
                 colors_count = int((self.__pixels_offset - self.__colors_offset) / 4)
 
                 if colors_count < 1:
-                    raise ValueError('Invalid input colors count: ' + str(colors_count))
+                    raise ValueError(f'Invalid input colors count: {colors_count}')
 
                 if colors_count <= 16:
                     colors_count = 16
                 else:
                     palette_colors_count = max(colors_count, 256)
-                    self.__colors = struct.unpack(str(palette_colors_count) + 'I', file.read(palette_colors_count * 4))
+                    self.__colors = struct.unpack(
+                        f'{str(palette_colors_count)}I',
+                        file.read(palette_colors_count * 4),
+                    )
 
                     file.seek(self.__pixels_offset)
                     pixels_count = self.width * self.height  # no padding, multiple of 8.
-                    self.__pixels = [ord(pixel) for pixel in
-                                     struct.unpack(str(pixels_count) + 'c', file.read(pixels_count))]
+                    self.__pixels = [
+                        ord(pixel)
+                        for pixel in struct.unpack(
+                            f'{str(pixels_count)}c', file.read(pixels_count)
+                        )
+                    ]
 
                     colors_count = max(self.__pixels) + 1
 
                     if colors_count > palette_colors_count:
-                        raise ValueError('Not enough palette colors: ' + str(colors_count) + ' - ' +
-                                         str(palette_colors_count))
+                        raise ValueError(
+                            f'Not enough palette colors: {colors_count} - {str(palette_colors_count)}'
+                        )
 
                     extra_colors = colors_count % 16
 
@@ -88,7 +99,7 @@ class BMP:
                         colors_count += 16 - extra_colors
 
                     if colors_count > 256:
-                        raise ValueError('Invalid calculated colors count: ' + str(colors_count))
+                        raise ValueError(f'Invalid calculated colors count: {colors_count}')
 
             self.colors_count = colors_count
 

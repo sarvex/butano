@@ -20,7 +20,7 @@ def parse_colors_count(info, bmp):
         colors_count = int(info['colors_count'])
 
         if colors_count < 1 or colors_count > 256:
-            raise ValueError('Invalid colors count: ' + str(colors_count))
+            raise ValueError(f'Invalid colors count: {colors_count}')
 
         extra_colors = colors_count % 16
 
@@ -36,15 +36,15 @@ def parse_sprite_bpp_mode(info, colors_count):
     try:
         bpp_mode = str(info['bpp_mode'])
 
-        if bpp_mode == 'bpp_8':
-            return True
-        elif bpp_mode == 'bpp_4':
+        if bpp_mode == 'bpp_4':
             if colors_count > 16:
-                raise ValueError('Too much colors for BPP4 mode: ' + str(colors_count))
+                raise ValueError(f'Too much colors for BPP4 mode: {str(colors_count)}')
 
             return False
+        elif bpp_mode == 'bpp_8':
+            return True
         else:
-            raise ValueError('Invalid BPP mode: ' + bpp_mode)
+            raise ValueError(f'Invalid BPP mode: {bpp_mode}')
     except KeyError:
         return colors_count > 16
 
@@ -53,19 +53,21 @@ def parse_bg_bpp_mode(info, file_name_no_ext):
     try:
         bpp_mode = str(info['bpp_mode'])
     except KeyError:
-        raise ValueError('bpp_mode field not found in graphics json file: ' + file_name_no_ext + '.json')
+        raise ValueError(
+            f'bpp_mode field not found in graphics json file: {file_name_no_ext}.json'
+        )
 
-    if bpp_mode == 'bpp_8':
-        return True
-    elif bpp_mode == 'bpp_4':
+    if bpp_mode == 'bpp_4':
         return False
+    elif bpp_mode == 'bpp_8':
+        return True
     else:
-        raise ValueError('Invalid BPP mode: ' + bpp_mode)
+        raise ValueError(f'Invalid BPP mode: {bpp_mode}')
 
 
 def validate_compression(compression):
     if compression not in ['none', 'lz77', 'run_length', 'huffman', 'auto']:
-        raise ValueError('Unknown compression: ' + str(compression))
+        raise ValueError(f'Unknown compression: {str(compression)}')
 
 
 def compression_label(compression):
@@ -81,16 +83,16 @@ def compression_label(compression):
     if compression == 'huffman':
         return 'compression_type::HUFFMAN'
 
-    raise ValueError('Unknown compression: ' + str(compression))
+    raise ValueError(f'Unknown compression: {str(compression)}')
 
 
 def append_compression_command(tag, compression, command):
     if compression == 'lz77':
-        command.append('-' + tag + 'zl')
+        command.append(f'-{tag}zl')
     elif compression == 'run_length':
-        command.append('-' + tag + 'zr')
+        command.append(f'-{tag}zr')
     elif compression == 'huffman':
-        command.append('-' + tag + 'zh')
+        command.append(f'-{tag}zh')
 
 
 def remove_file(file_path):
@@ -114,10 +116,13 @@ class SpriteItem:
             elif height == 32:
                 return'TALL', 'NORMAL'
             elif height == 64:
-                raise ValueError('Invalid sprite size: (' + str(width) + 'x' + str(height) + ')' +
-                                 SpriteItem.valid_sizes_message())
+                raise ValueError(
+                    f'Invalid sprite size: ({str(width)}x{str(height)}){SpriteItem.valid_sizes_message()}'
+                )
             else:
-                raise ValueError('Invalid sprite height: ' + str(height) + SpriteItem.valid_sizes_message())
+                raise ValueError(
+                    f'Invalid sprite height: {str(height)}{SpriteItem.valid_sizes_message()}'
+                )
         elif width == 16:
             if height == 8:
                 return 'WIDE', 'SMALL'
@@ -126,10 +131,13 @@ class SpriteItem:
             elif height == 32:
                 return 'TALL', 'BIG'
             elif height == 64:
-                raise ValueError('Invalid sprite size: (: ' + str(width) + 'x' + str(height) + ')' +
-                                 SpriteItem.valid_sizes_message())
+                raise ValueError(
+                    f'Invalid sprite size: (: {str(width)}x{str(height)}){SpriteItem.valid_sizes_message()}'
+                )
             else:
-                raise ValueError('Invalid sprite height: ' + str(height) + SpriteItem.valid_sizes_message())
+                raise ValueError(
+                    f'Invalid sprite height: {str(height)}{SpriteItem.valid_sizes_message()}'
+                )
         elif width == 32:
             if height == 8:
                 return 'WIDE', 'NORMAL'
@@ -140,22 +148,26 @@ class SpriteItem:
             elif height == 64:
                 return 'TALL', 'HUGE'
             else:
-                raise ValueError('Invalid sprite height: ' + str(height) + SpriteItem.valid_sizes_message())
+                raise ValueError(
+                    f'Invalid sprite height: {str(height)}{SpriteItem.valid_sizes_message()}'
+                )
         elif width == 64:
-            if height == 8:
-                raise ValueError('Invalid sprite size: (' + str(width) + 'x' + str(height) + ')' +
-                                 SpriteItem.valid_sizes_message())
-            elif height == 16:
-                raise ValueError('Invalid sprite size: (' + str(width) + 'x' + str(height) + ')' +
-                                 SpriteItem.valid_sizes_message())
+            if height in [8, 16]:
+                raise ValueError(
+                    f'Invalid sprite size: ({str(width)}x{str(height)}){SpriteItem.valid_sizes_message()}'
+                )
             elif height == 32:
                 return 'WIDE', 'HUGE'
             elif height == 64:
                 return 'SQUARE', 'HUGE'
             else:
-                raise ValueError('Invalid sprite height: ' + str(height) + SpriteItem.valid_sizes_message())
+                raise ValueError(
+                    f'Invalid sprite height: {str(height)}{SpriteItem.valid_sizes_message()}'
+                )
         else:
-            raise ValueError('Invalid sprite width: ' + str(width) + SpriteItem.valid_sizes_message())
+            raise ValueError(
+                f'Invalid sprite width: {str(width)}{SpriteItem.valid_sizes_message()}'
+            )
 
     def __init__(self, file_path, file_name_no_ext, build_folder_path, info):
         bmp = BMP(file_path)
@@ -166,10 +178,14 @@ class SpriteItem:
         try:
             height = int(info['height'])
         except KeyError:
-            raise ValueError('height field not found in graphics json file: ' + file_name_no_ext + '.json')
+            raise ValueError(
+                f'height field not found in graphics json file: {file_name_no_ext}.json'
+            )
 
         if bmp.height % height:
-            raise ValueError('File height is not divisible by item height: ' + str(bmp.height) + ' - ' + str(height))
+            raise ValueError(
+                f'File height is not divisible by item height: {str(bmp.height)} - {height}'
+            )
 
         self.__graphics = int(bmp.height / height)
         self.__shape, self.__size = SpriteItem.shape_and_size(bmp.width, height)
@@ -235,8 +251,8 @@ class SpriteItem:
 
     def __write_header(self, tiles_compression, palette_compression, skip_write):
         name = self.__file_name_no_ext
-        grit_file_path = self.__build_folder_path + '/' + name + '_bn_gfx.h'
-        header_file_path = self.__build_folder_path + '/bn_sprite_items_' + name + '.h'
+        grit_file_path = f'{self.__build_folder_path}/{name}_bn_gfx.h'
+        header_file_path = f'{self.__build_folder_path}/bn_sprite_items_{name}.h'
 
         with open(grit_file_path, 'r') as grit_file:
             grit_data = grit_file.read()
@@ -268,28 +284,86 @@ class SpriteItem:
         else:
             bpp_mode_label = 'bpp_mode::BPP_4'
 
-        grit_data = re.sub(r'Tiles\[([0-9]+)]', 'Tiles[' + str(tiles_count) + ']', grit_data)
-        grit_data = re.sub(r'Pal\[([0-9]+)]', 'Pal[' + str(self.__colors_count) + ']', grit_data)
+        grit_data = re.sub(
+            r'Tiles\[([0-9]+)]', f'Tiles[{str(tiles_count)}]', grit_data
+        )
+        grit_data = re.sub(
+            r'Pal\[([0-9]+)]', f'Pal[{str(self.__colors_count)}]', grit_data
+        )
 
         with open(header_file_path, 'w') as header_file:
-            include_guard = 'BN_SPRITE_ITEMS_' + name.upper() + '_H'
-            header_file.write('#ifndef ' + include_guard + '\n')
-            header_file.write('#define ' + include_guard + '\n')
+            include_guard = f'BN_SPRITE_ITEMS_{name.upper()}_H'
+            header_file.write(f'#ifndef {include_guard}' + '\n')
+            header_file.write(f'#define {include_guard}' + '\n')
             header_file.write('\n')
             header_file.write('#include "bn_sprite_item.h"' + '\n')
             header_file.write(grit_data)
             header_file.write('\n')
             header_file.write('namespace bn::sprite_items' + '\n')
             header_file.write('{' + '\n')
-            header_file.write('    constexpr inline sprite_item ' + name + '(' +
-                              'sprite_shape_size(sprite_shape::' + self.__shape + ', ' +
-                              'sprite_size::' + self.__size + '), ' + '\n            ' +
-                              'sprite_tiles_item(span<const tile>(' + name + '_bn_gfxTiles, ' +
-                              str(tiles_count) + '), ' + bpp_mode_label + ', ' + compression_label(tiles_compression) +
-                              ', ' + str(self.__graphics) + '), ' + '\n            ' +
-                              'sprite_palette_item(span<const color>(' + name + '_bn_gfxPal, ' +
-                              str(self.__colors_count) + '), ' + bpp_mode_label + ', ' +
-                              compression_label(palette_compression) + '));\n')
+            header_file.write(
+                (
+                    (
+                        (
+                            (
+                                (
+                                    (
+                                        (
+                                            (
+                                                (
+                                                    (
+                                                        (
+                                                            (
+                                                                (
+                                                                    (
+                                                                        (
+                                                                            (
+                                                                                (
+                                                                                    f'    constexpr inline sprite_item {name}(sprite_shape_size(sprite_shape::{self.__shape}, sprite_size::{self.__size}), '
+                                                                                    + '\n            '
+                                                                                )
+                                                                                + 'sprite_tiles_item(span<const tile>('
+                                                                            )
+                                                                            + name
+                                                                        )
+                                                                        + '_bn_gfxTiles, '
+                                                                    )
+                                                                    + str(
+                                                                        tiles_count
+                                                                    )
+                                                                    + '), '
+                                                                )
+                                                                + bpp_mode_label
+                                                            )
+                                                            + ', '
+                                                        )
+                                                        + compression_label(
+                                                            tiles_compression
+                                                        )
+                                                        + ', '
+                                                    )
+                                                    + str(self.__graphics)
+                                                    + '), '
+                                                )
+                                                + '\n            '
+                                            )
+                                            + 'sprite_palette_item(span<const color>('
+                                        )
+                                        + name
+                                    )
+                                    + '_bn_gfxPal, '
+                                )
+                                + str(self.__colors_count)
+                                + '), '
+                            )
+                            + bpp_mode_label
+                        )
+                        + ', '
+                    )
+                    + compression_label(palette_compression)
+                    + '));\n'
+                )
+            )
             header_file.write('}' + '\n')
             header_file.write('\n')
             header_file.write('#endif' + '\n')
@@ -298,7 +372,7 @@ class SpriteItem:
         return total_size, header_file_path
 
     def __execute_command(self, tiles_compression, palette_compression):
-        command = ['grit', self.__file_path, '-gt', '-pe' + str(self.__colors_count)]
+        command = ['grit', self.__file_path, '-gt', f'-pe{str(self.__colors_count)}']
 
         if self.__bpp_8:
             command.append('-gB8')
@@ -307,13 +381,17 @@ class SpriteItem:
 
         append_compression_command('g', tiles_compression, command)
         append_compression_command('p', palette_compression, command)
-        command.append('-o' + self.__build_folder_path + '/' + self.__file_name_no_ext + '_bn_gfx')
+        command.append(
+            f'-o{self.__build_folder_path}/{self.__file_name_no_ext}_bn_gfx'
+        )
         command = ' '.join(command)
 
         try:
             subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
-            raise ValueError('grit call failed (return code ' + str(e.returncode) + '): ' + str(e.output))
+            raise ValueError(
+                f'grit call failed (return code {str(e.returncode)}): {str(e.output)}'
+            )
 
 
 class SpriteTilesItem:
@@ -331,10 +409,14 @@ class SpriteTilesItem:
         try:
             height = int(info['height'])
         except KeyError:
-            raise ValueError('height field not found in graphics json file: ' + file_name_no_ext + '.json')
+            raise ValueError(
+                f'height field not found in graphics json file: {file_name_no_ext}.json'
+            )
 
         if bmp.height % height:
-            raise ValueError('File height is not divisible by item height: ' + str(bmp.height) + ' - ' + str(height))
+            raise ValueError(
+                f'File height is not divisible by item height: {str(bmp.height)} - {height}'
+            )
 
         self.__graphics = int(bmp.height / height)
         self.__shape, self.__size = SpriteItem.shape_and_size(bmp.width, height)
@@ -370,8 +452,8 @@ class SpriteTilesItem:
 
     def __write_header(self, compression, skip_write):
         name = self.__file_name_no_ext
-        grit_file_path = self.__build_folder_path + '/' + name + '_bn_gfx.h'
-        header_file_path = self.__build_folder_path + '/bn_sprite_tiles_items_' + name + '.h'
+        grit_file_path = f'{self.__build_folder_path}/{name}_bn_gfx.h'
+        header_file_path = f'{self.__build_folder_path}/bn_sprite_tiles_items_{name}.h'
 
         with open(grit_file_path, 'r') as grit_file:
             grit_data = grit_file.read()
@@ -402,12 +484,14 @@ class SpriteTilesItem:
         else:
             bpp_mode_label = 'bpp_mode::BPP_4'
 
-        grit_data = re.sub(r'Tiles\[([0-9]+)]', 'Tiles[' + str(tiles_count) + ']', grit_data)
+        grit_data = re.sub(
+            r'Tiles\[([0-9]+)]', f'Tiles[{str(tiles_count)}]', grit_data
+        )
 
         with open(header_file_path, 'w') as header_file:
-            include_guard = 'BN_SPRITE_TILES_ITEMS_' + name.upper() + '_H'
-            header_file.write('#ifndef ' + include_guard + '\n')
-            header_file.write('#define ' + include_guard + '\n')
+            include_guard = f'BN_SPRITE_TILES_ITEMS_{name.upper()}_H'
+            header_file.write(f'#ifndef {include_guard}' + '\n')
+            header_file.write(f'#define {include_guard}' + '\n')
             header_file.write('\n')
             header_file.write('#include "bn_sprite_tiles_item.h"' + '\n')
             header_file.write('#include "bn_sprite_shape_size.h"' + '\n')
@@ -415,14 +499,36 @@ class SpriteTilesItem:
             header_file.write('\n')
             header_file.write('namespace bn::sprite_tiles_items' + '\n')
             header_file.write('{' + '\n')
-            header_file.write('    constexpr inline sprite_tiles_item ' + name + '(span<const tile>(' +
-                              name + '_bn_gfxTiles, ' + str(tiles_count) + '), ' + '\n            ' +
-                              bpp_mode_label + ', ' + compression_label(compression) + ', ' +
-                              str(self.__graphics) + ');' + '\n')
+            header_file.write(
+                (
+                    (
+                        (
+                            (
+                                (
+                                    (
+                                        f'    constexpr inline sprite_tiles_item {name}(span<const tile>({name}_bn_gfxTiles, {str(tiles_count)}), '
+                                        + '\n            '
+                                    )
+                                    + bpp_mode_label
+                                )
+                                + ', '
+                            )
+                            + compression_label(compression)
+                            + ', '
+                        )
+                        + str(self.__graphics)
+                        + ');'
+                    )
+                    + '\n'
+                )
+            )
             header_file.write('\n')
-            header_file.write('    constexpr inline sprite_shape_size ' + name +
-                              '_shape_size(sprite_shape::' + self.__shape + ', ' +
-                              'sprite_size::' + self.__size + ');' + '\n')
+            header_file.write(
+                (
+                    f'    constexpr inline sprite_shape_size {name}_shape_size(sprite_shape::{self.__shape}, sprite_size::{self.__size});'
+                    + '\n'
+                )
+            )
             header_file.write('}' + '\n')
             header_file.write('\n')
             header_file.write('#endif' + '\n')
@@ -439,13 +545,17 @@ class SpriteTilesItem:
             command.append('-gB4')
 
         append_compression_command('g', compression, command)
-        command.append('-o' + self.__build_folder_path + '/' + self.__file_name_no_ext + '_bn_gfx')
+        command.append(
+            f'-o{self.__build_folder_path}/{self.__file_name_no_ext}_bn_gfx'
+        )
         command = ' '.join(command)
 
         try:
             subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
-            raise ValueError('grit call failed (return code ' + str(e.returncode) + '): ' + str(e.output))
+            raise ValueError(
+                f'grit call failed (return code {str(e.returncode)}): {str(e.output)}'
+            )
 
 
 class SpritePaletteItem:
@@ -486,8 +596,10 @@ class SpritePaletteItem:
 
     def __write_header(self, compression, skip_write):
         name = self.__file_name_no_ext
-        grit_file_path = self.__build_folder_path + '/' + name + '_bn_gfx.h'
-        header_file_path = self.__build_folder_path + '/bn_sprite_palette_items_' + name + '.h'
+        grit_file_path = f'{self.__build_folder_path}/{name}_bn_gfx.h'
+        header_file_path = (
+            f'{self.__build_folder_path}/bn_sprite_palette_items_{name}.h'
+        )
 
         with open(grit_file_path, 'r') as grit_file:
             grit_data = grit_file.read()
@@ -504,27 +616,40 @@ class SpritePaletteItem:
 
         remove_file(grit_file_path)
 
-        if self.__bpp_8:
-            bpp_mode_label = 'bpp_mode::BPP_8'
-        else:
-            bpp_mode_label = 'bpp_mode::BPP_4'
-
-        grit_data = re.sub(r'Pal\[([0-9]+)]', 'Pal[' + str(self.__colors_count) + ']', grit_data)
+        bpp_mode_label = 'bpp_mode::BPP_8' if self.__bpp_8 else 'bpp_mode::BPP_4'
+        grit_data = re.sub(
+            r'Pal\[([0-9]+)]', f'Pal[{str(self.__colors_count)}]', grit_data
+        )
 
         with open(header_file_path, 'w') as header_file:
-            include_guard = 'BN_SPRITE_PALETTE_ITEMS_' + name.upper() + '_H'
-            header_file.write('#ifndef ' + include_guard + '\n')
-            header_file.write('#define ' + include_guard + '\n')
+            include_guard = f'BN_SPRITE_PALETTE_ITEMS_{name.upper()}_H'
+            header_file.write(f'#ifndef {include_guard}' + '\n')
+            header_file.write(f'#define {include_guard}' + '\n')
             header_file.write('\n')
             header_file.write('#include "bn_sprite_palette_item.h"' + '\n')
             header_file.write(grit_data)
             header_file.write('\n')
             header_file.write('namespace bn::sprite_palette_items' + '\n')
             header_file.write('{' + '\n')
-            header_file.write('    constexpr inline sprite_palette_item ' + name + '(' +
-                              'span<const color>(' + name + '_bn_gfxPal, ' +
-                              str(self.__colors_count) + '), ' + '\n            ' +
-                              bpp_mode_label + ', ' + compression_label(compression) + ');' + '\n')
+            header_file.write(
+                (
+                    (
+                        (
+                            (
+                                (
+                                    f'    constexpr inline sprite_palette_item {name}(span<const color>({name}_bn_gfxPal, {str(self.__colors_count)}), '
+                                    + '\n            '
+                                )
+                                + bpp_mode_label
+                            )
+                            + ', '
+                        )
+                        + compression_label(compression)
+                        + ');'
+                    )
+                    + '\n'
+                )
+            )
             header_file.write('}' + '\n')
             header_file.write('\n')
             header_file.write('#endif' + '\n')
@@ -533,15 +658,19 @@ class SpritePaletteItem:
         return total_size, header_file_path
 
     def __execute_command(self, compression):
-        command = ['grit', self.__file_path, '-g!', '-pe' + str(self.__colors_count)]
+        command = ['grit', self.__file_path, '-g!', f'-pe{str(self.__colors_count)}']
         append_compression_command('p', compression, command)
-        command.append('-o' + self.__build_folder_path + '/' + self.__file_name_no_ext + '_bn_gfx')
+        command.append(
+            f'-o{self.__build_folder_path}/{self.__file_name_no_ext}_bn_gfx'
+        )
         command = ' '.join(command)
 
         try:
             subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
-            raise ValueError('grit call failed (return code ' + str(e.returncode) + '): ' + str(e.output))
+            raise ValueError(
+                f'grit call failed (return code {str(e.returncode)}): {str(e.output)}'
+            )
 
 
 class RegularBgItem:
@@ -556,16 +685,16 @@ class RegularBgItem:
         height = bmp.height
 
         if width % 256 != 0:
-            raise ValueError('Regular BGs width must be divisible by 256: ' + str(width))
+            raise ValueError(f'Regular BGs width must be divisible by 256: {str(width)}')
 
         if height % 256 != 0:
-            raise ValueError('Regular BGs height must be divisible by 256: ' + str(height))
+            raise ValueError(f'Regular BGs height must be divisible by 256: {str(height)}')
 
         self.__width = int(width / 8)
         self.__height = int(height / 8)
         self.__bpp_8 = False
         self.__sbb = (width == 256 and height == 512) or (width == 512 and height == 256) or \
-                     (width == 512 and height == 512)
+                         (width == 512 and height == 512)
 
         try:
             self.__repeated_tiles_reduction = bool(info['repeated_tiles_reduction'])
@@ -585,19 +714,39 @@ class RegularBgItem:
         try:
             palette_item = str(info['palette_item'])
 
-            if len(palette_item) == 0:
+            if not palette_item:
                 raise ValueError('Empty palette item')
 
             if palette_item[0] not in string.ascii_lowercase:
-                raise ValueError('Invalid palette item: ' + palette_item +
-                                 ' (invalid character: \'' + palette_item[0] + '\')')
+                raise ValueError(
+                    (
+                        (
+                            (
+                                f'Invalid palette item: {palette_item}'
+                                + ' (invalid character: \''
+                            )
+                            + palette_item[0]
+                        )
+                        + '\')'
+                    )
+                )
 
-            valid_characters = '_%s%s' % (string.ascii_lowercase, string.digits)
+            valid_characters = f'_{string.ascii_lowercase}{string.digits}'
 
             for palette_item_character in palette_item:
                 if palette_item_character not in valid_characters:
-                    raise ValueError('Invalid palette item: ' + palette_item +
-                                     ' (invalid character: \'' + palette_item_character + '\')')
+                    raise ValueError(
+                        (
+                            (
+                                (
+                                    f'Invalid palette item: {palette_item}'
+                                    + ' (invalid character: \''
+                                )
+                                + palette_item_character
+                            )
+                            + '\')'
+                        )
+                    )
 
             self.__palette_item = palette_item
             self.__colors_count = 0
@@ -612,15 +761,19 @@ class RegularBgItem:
                 self.__bpp_8 = True
             elif bpp_mode == 'bpp_4_auto':
                 if self.__palette_item is not None:
-                    raise ValueError('BPP mode not supported with an external palette item: ' + bpp_mode)
+                    raise ValueError(
+                        f'BPP mode not supported with an external palette item: {bpp_mode}'
+                    )
 
-                self.__file_path = self.__build_folder_path + '/' + file_name_no_ext + '.bn_quantized.bmp'
+                self.__file_path = f'{self.__build_folder_path}/{file_name_no_ext}.bn_quantized.bmp'
                 self.__colors_count = bmp.quantize(self.__file_path)
-            elif bpp_mode != 'bpp_4' and bpp_mode != 'bpp_4_manual':
-                raise ValueError('Invalid BPP mode: ' + bpp_mode)
+            elif bpp_mode not in ['bpp_4', 'bpp_4_manual']:
+                raise ValueError(f'Invalid BPP mode: {bpp_mode}')
         except KeyError:
             if self.__palette_item is not None:
-                raise ValueError('bpp_mode field not found in graphics json file: ' + file_name_no_ext + '.json')
+                raise ValueError(
+                    f'bpp_mode field not found in graphics json file: {file_name_no_ext}.json'
+                )
 
             if self.__colors_count > 16:
                 self.__bpp_8 = True

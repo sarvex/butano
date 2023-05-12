@@ -35,7 +35,7 @@ class ModFile:
         return (sample_num, note_index, effect_num, effect_param)
 
     def __init__(self, data):
-        self.name = data[0:20].decode("utf-8")
+        self.name = data[:20].decode("utf-8")
         print(f"Song name: '{self.name}'")
 
         # Skip name and sample data (31 samples)
@@ -57,16 +57,13 @@ class ModFile:
         read_ptr += 4
 
         self.patterns = []
-        for i in range(0, 64):
+        for _ in range(0, 64):
             self.patterns.append(data[read_ptr:read_ptr + 64 * 4 * 4])
             read_ptr += 64 * 4 * 4
 
 # Channels 1, 2, 4
 def mod_volume_to_gb(mod_vol):
-    if mod_vol >= 64:
-        return 15
-    else:
-        return mod_vol >> 2
+    return 15 if mod_vol >= 64 else mod_vol >> 2
 
 # Channel 3
 def mod_volume_to_gb_ch3(mod_vol):
@@ -166,10 +163,7 @@ def mod_get_index_from_period(period):
     return nearest_index
 
 def speed_mod_to_gb(speed):
-    if do_speed_conversion: # Amiga's 50 Hz to GB's 60 Hz
-        return (speed * 60) // 50
-    else:
-        return speed
+    return (speed * 60) // 50 if do_speed_conversion else speed
 
 EFFECT_PAN              = 0
 EFFECT_ARPEGGIO         = 1
@@ -441,7 +435,7 @@ def convert_file(mod_in_path, label_name, speed_conversion):
 
     mod = ModFile(file_byte_array)
 
-    output_path = label_name + ".c"
+    output_path = f"{label_name}.c"
 
     with open(output_path, "w") as fileout:
 
@@ -496,10 +490,10 @@ if __name__ == "__main__":
     try:
         convert_file(args.modfile, args.song_name, args.speed)
     except RowConversionError as e:
-        print("ERROR: " + str(e))
+        print(f"ERROR: {str(e)}")
         sys.exit(1)
     except MODFormatError as e:
-        print("ERROR: Invalid MOD file: " + str(e))
+        print(f"ERROR: Invalid MOD file: {str(e)}")
         sys.exit(1)
 
     print("Done!")

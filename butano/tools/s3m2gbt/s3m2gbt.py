@@ -91,36 +91,36 @@ class S3MFilePatternCell():
 
         self.channel = channel
 
-        if (note != None) or (instrument != None):
+        if note is None and instrument is None:
+            self.has_note_and_instrument = False
+
+        else:
             self.has_note_and_instrument = True
             self.note = note
             self.instrument = instrument
-        else:
-            self.has_note_and_instrument = False
-
-        if volume != None:
-            self.has_volume = True
-            self.volume = volume
-        else:
+        if volume is None:
             self.has_volume = False
 
-        if (effect != None) or (effect_args != None):
+        else:
+            self.has_volume = True
+            self.volume = volume
+        if effect is None and effect_args is None:
+            self.has_effect = False
+
+        else:
             self.has_effect = True
             self.effect = effect
             self.effect_args = effect_args
-        else:
-            self.has_effect = False
 
 class S3MFilePattern(S3MFormatReader):
 
     def __init__(self, data, offset):
 
         # Check if we have asked to generate an empty pattern
-        if data == None:
+        if data is None:
             cell = S3MFilePatternCell(0, 0, 0, 0, 0, 0, 0)
             self.cells = []
-            for i in range(0, 64):
-                self.cells.append(cell)
+            self.cells.extend(cell for _ in range(0, 64))
             return
 
         self.data = data
@@ -194,15 +194,11 @@ class S3MFile(S3MFormatReader):
 
         self.read_ptr += 2 # Ignore master volume and ultraclick removal
 
-        # Save this for later
-        has_custom_pan = False
-        if self.read_u8() == 252:
-            has_custom_pan = True
-
+        has_custom_pan = self.read_u8() == 252
         self.read_ptr = 0x40
         channel_settings = self.read_string(4)
         if channel_settings[0] >= 16 or channel_settings[1] >= 16 or \
-           channel_settings[2] >= 16 or channel_settings[3] >= 16:
+               channel_settings[2] >= 16 or channel_settings[3] >= 16:
             raise S3MFormatError("Invalid channel settings: Channels 0-3 must be enabled")
 
         # Read orders
@@ -259,10 +255,7 @@ class S3MFile(S3MFormatReader):
 
 # Channels 1, 2, 4
 def s3m_volume_to_gb(s3m_vol):
-    if s3m_vol >= 64:
-        return 15
-    else:
-        return s3m_vol >> 2;
+    return 15 if s3m_vol >= 64 else s3m_vol >> 2
 
 # Channel 3
 def s3m_volume_to_gb_ch3(s3m_vol):
@@ -295,8 +288,7 @@ def s3m_note_to_gb(note):
     elif note > 32 + 16 * 6:
         raise RowConversionError("Note too high")
 
-    note = (note & 0xF) + ((note & 0xF0) >> 4) * 12
-    return note
+    return (note & 0xF) + ((note & 0xF0) >> 4) * 12
 
 def s3m_pan_to_gb(pan, channel):
     left = False
@@ -424,7 +416,7 @@ def convert_channel1(note_index, samplenum, volume, effectnum, effectparams):
         note_index = s3m_note_to_gb(note_index)
         command[0] |= HAS_NOTE
         command[command_ptr] = note_index
-        command_ptr = command_ptr + 1
+        command_ptr += 1
 
     # Check if there is a sample defined
     if samplenum > 0:
@@ -462,7 +454,7 @@ def convert_channel2(note_index, samplenum, volume, effectnum, effectparams):
         note_index = s3m_note_to_gb(note_index)
         command[0] |= HAS_NOTE
         command[command_ptr] = note_index
-        command_ptr = command_ptr + 1
+        command_ptr += 1
 
     # Check if there is a sample defined
     if samplenum > 0:
@@ -500,7 +492,7 @@ def convert_channel3(note_index, samplenum, volume, effectnum, effectparams):
         note_index = s3m_note_to_gb(note_index)
         command[0] |= HAS_NOTE
         command[command_ptr] = note_index
-        command_ptr = command_ptr + 1
+        command_ptr += 1
 
     # Check if there is a sample defined
     if samplenum > 0:
@@ -543,10 +535,7 @@ def convert_channel4(note_index, samplenum, volume, effectnum, effectparams):
 
     # Check if there is a sample defined
     if samplenum > 0:
-        if samplenum == 0xFE:
-            kit = 0xFE;
-        else:
-            kit = samplenum & 0xF;
+        kit = 0xFE if samplenum == 0xFE else samplenum & 0xF
         command[0] |= HAS_KIT
         command[command_ptr] = kit
         command_ptr += 1
@@ -579,17 +568,8 @@ STARTUP_CMD_CHANNEL3_INSTRUMENT = 3
 SAMPLE_64_ENTRIES = 1 << 7
 
 def initial_state_array(speed, panning_array, instruments):
-    array = []
+    array = [STARTUP_CMD_SPEED, speed, STARTUP_CMD_PANING]
 
-    # Initial speed
-    # -------------
-
-    array.extend([STARTUP_CMD_SPEED, speed])
-
-    # Initial panning
-    # ---------------
-
-    array.extend([STARTUP_CMD_PANING])
     array.extend(panning_array)
 
     # Channel 3 instruments
@@ -607,10 +587,10 @@ def initial_state_array(speed, panning_array, instruments):
             if count < 8 or count > 15:
                 continue
 
-            name = inst.sample_name
-
             size = inst.length
-            if size != 32 and size != 64:
+            if size not in [32, 64]:
+                name = inst.sample_name
+
                 raise S3MFormatError(f"Sample '{name}': Invalid sample length: {size}")
             else:
                 flags = count - 8 # The low bits are the instrument index
@@ -640,8 +620,8 @@ def convert_file(module_path, song_name, output_path, export_instruments):
 
     s3m = S3MFile(file_byte_array)
 
-    if output_path == None:
-        output_path = song_name + ".c"
+    if output_path is None:
+        output_path = f"{song_name}.c"
 
     with open(output_path, "w") as fileout:
 
@@ -651,7 +631,7 @@ def convert_file(module_path, song_name, output_path, export_instruments):
         # Export patterns
         # ---------------
 
-        print(f"Exporting patterns...")
+        print("Exporting patterns...")
 
         pattern = -1
         for p in s3m.patterns:
@@ -752,7 +732,7 @@ def convert_file(module_path, song_name, output_path, export_instruments):
         # Export initial state
         # --------------------
 
-        print(f"Exporting initial state...")
+        print("Exporting initial state...")
 
         fileout.write(f"const uint8_t {song_name}_init_state[] = {{\n")
 
@@ -767,10 +747,7 @@ def convert_file(module_path, song_name, output_path, export_instruments):
             s3m_pan_to_gb(default_pan[3], 4)
         ]
 
-        instr = None
-        if export_instruments:
-            instr = s3m.instruments
-
+        instr = s3m.instruments if export_instruments else None
         state_array = initial_state_array(s3m.initial_speed, gb_default_pan, instr)
 
         # Write rows of 8 bytes until the end of the array
@@ -784,7 +761,7 @@ def convert_file(module_path, song_name, output_path, export_instruments):
                 write = state_array
                 state_array = []
             else:
-                write = state_array[0:8]
+                write = state_array[:8]
                 state_array = state_array[8:]
 
             fileout.write("    ")
@@ -798,7 +775,7 @@ def convert_file(module_path, song_name, output_path, export_instruments):
         # Export orders
         # -------------
 
-        print(f"Exporting orders...")
+        print("Exporting orders...")
 
         fileout.write(f"const uint8_t *{song_name}[] = {{\n")
 
@@ -841,10 +818,10 @@ if __name__ == "__main__":
     try:
         convert_file(args.input, args.name, args.output, args.instruments)
     except RowConversionError as e:
-        print("ERROR: " + str(e))
+        print(f"ERROR: {str(e)}")
         sys.exit(1)
     except S3MFormatError as e:
-        print("ERROR: Invalid S3M file: " + str(e))
+        print(f"ERROR: Invalid S3M file: {str(e)}")
         sys.exit(1)
 
     print("Done!")

@@ -25,20 +25,37 @@ class FileInfo:
             return False
 
         if file_name[0] not in string.ascii_lowercase:
-            raise ValueError('Invalid file name: ' + file_name + ' (invalid character: \'' + file_name[0] + '\')')
+            raise ValueError(
+                f'Invalid file name: {file_name}'
+                + ' (invalid character: \''
+                + file_name[0]
+                + '\')'
+            )
 
         file_name_parts = file_name.split('.')
 
         if len(file_name_parts) != 2:
-            raise ValueError('Invalid file name: ' + file_name + ' (one and only one dot required)')
+            raise ValueError(
+                f'Invalid file name: {file_name} (one and only one dot required)'
+            )
 
         for file_name_character in file_name:
             if file_name_character not in FileInfo.valid_characters:
-                raise ValueError('Invalid file name: ' + file_name +
-                                 ' (invalid character: \'' + file_name_character + '\')')
+                raise ValueError(
+                    (
+                        (
+                            (
+                                f'Invalid file name: {file_name}'
+                                + ' (invalid character: \''
+                            )
+                            + file_name_character
+                        )
+                        + '\')'
+                    )
+                )
 
         if file_name_parts[0] in FileInfo.cpp_keywords:
-            raise ValueError('File name is a C++ keyword: ' + file_name)
+            raise ValueError(f'File name is a C++ keyword: {file_name}')
 
         return True
 
@@ -59,9 +76,7 @@ class FileInfo:
         info = []
 
         for file_path in file_paths:
-            info.append(file_path)
-            info.append(str(os.path.getmtime(file_path)))
-
+            info.extend((file_path, str(os.path.getmtime(file_path))))
         return FileInfo('\n'.join(info), False)
 
     def __init__(self, info, read_failed):
@@ -79,7 +94,4 @@ class FileInfo:
         return self.__info != other.__info or self.__read_failed != other.__read_failed
 
     def __repr__(self):
-        if self.__read_failed:
-            return '[read failed]'
-
-        return self.__info
+        return '[read failed]' if self.__read_failed else self.__info

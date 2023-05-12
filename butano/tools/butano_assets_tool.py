@@ -20,6 +20,6 @@ if __name__ == "__main__":
         process_dmg_audio(args.dmg_audio, args.build)
         process_graphics(args.graphics, args.build)
     except Exception as ex:
-        sys.stderr.write('Error: ' + str(ex) + '\n')
+        sys.stderr.write(f'Error: {str(ex)}' + '\n')
         traceback.print_exc()
         exit(-1)

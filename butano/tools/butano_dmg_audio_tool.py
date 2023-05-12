@@ -27,9 +27,9 @@ class DmgAudioFileInfo:
         print(self.__file_name)
 
     def process(self, build_folder_path):
-        output_tag = self.__file_name_no_ext + '_bn_dmg'
-        output_file_name = output_tag + '.c'
-        output_file_path = build_folder_path + '/' + output_file_name
+        output_tag = f'{self.__file_name_no_ext}_bn_dmg'
+        output_file_name = f'{output_tag}.c'
+        output_file_path = f'{build_folder_path}/{output_file_name}'
 
         try:
             if self.__json_file_path is not None:
@@ -37,7 +37,9 @@ class DmgAudioFileInfo:
                     with open(self.__json_file_path) as json_file:
                         info = json.load(json_file)
                 except Exception as exception:
-                    raise ValueError(self.__json_file_path + ' DMG audio json file parse failed: ' + str(exception))
+                    raise ValueError(
+                        f'{self.__json_file_path} DMG audio json file parse failed: {str(exception)}'
+                    )
 
                 try:
                     self.__import_instruments = bool(info['import_instruments'])
@@ -102,20 +104,23 @@ class DmgAudioFileInfo:
 
     def __write_header(self, build_folder_path, output_tag):
         name = self.__file_name_no_ext
-        header_file_path = build_folder_path + '/bn_dmg_music_items_' + name + '.h'
+        header_file_path = f'{build_folder_path}/bn_dmg_music_items_{name}.h'
 
         with open(header_file_path, 'w') as header_file:
-            include_guard = 'BN_DMG_MUSIC_ITEMS_' + name.upper() + '_H'
-            header_file.write('#ifndef ' + include_guard + '\n')
-            header_file.write('#define ' + include_guard + '\n')
+            include_guard = f'BN_DMG_MUSIC_ITEMS_{name.upper()}_H'
+            header_file.write(f'#ifndef {include_guard}' + '\n')
+            header_file.write(f'#define {include_guard}' + '\n')
             header_file.write('\n')
             header_file.write('#include "bn_dmg_music_item.h"' + '\n')
             header_file.write('\n')
-            header_file.write('extern const uint8_t ' + output_tag + '[];' + '\n')
+            header_file.write(f'extern const uint8_t {output_tag}[];' + '\n')
             header_file.write('\n')
             header_file.write('namespace bn::dmg_music_items' + '\n')
             header_file.write('{' + '\n')
-            header_file.write('    constexpr inline dmg_music_item ' + name + '(*' + output_tag + ');' + '\n')
+            header_file.write(
+                f'    constexpr inline dmg_music_item {name}(*{output_tag});'
+                + '\n'
+            )
             header_file.write('}' + '\n')
             header_file.write('\n')
             header_file.write('#endif' + '\n')
@@ -142,7 +147,7 @@ def list_dmg_audio_file_infos(audio_folder_paths, build_folder_path):
         audio_file_names = os.listdir(audio_folder_path)
 
         for audio_file_name in audio_file_names:
-            audio_file_path = audio_folder_path + '/' + audio_file_name
+            audio_file_path = f'{audio_folder_path}/' + audio_file_name
 
             if os.path.isfile(audio_file_path) and FileInfo.validate(audio_file_name):
                 audio_file_name_split = os.path.splitext(audio_file_name)
@@ -209,14 +214,16 @@ def process_dmg_audio(audio_folder_paths, build_folder_path):
 
         for process_result in process_results:
             if len(process_result) == 3:
-                print('    ' + str(process_result[0]) + ' item header written in ' + str(process_result[1]))
+                print(
+                    f'    {str(process_result[0])} item header written in {str(process_result[1])}'
+                )
             else:
                 process_excs.append(process_result)
 
         sys.stdout.flush()
 
-        if len(process_excs) > 0:
+        if process_excs:
             for process_exc in process_excs:
-                sys.stderr.write(str(process_exc[0]) + ' error: ' + str(process_exc[1]) + '\n')
+                sys.stderr.write(f'{str(process_exc[0])} error: {str(process_exc[1])}' + '\n')
 
             exit(-1)
